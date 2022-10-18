@@ -76,18 +76,28 @@ impl ListingTableUrl {
         let s = s.as_ref();
 
         // This is necessary to handle the case of a path starting with a drive letter
+        #[cfg(not(target_arch = "wasm32"))]
         if std::path::Path::new(s).is_absolute() {
             return Self::parse_path(s);
         }
 
         match Url::parse(s) {
             Ok(url) => Ok(Self::new(url, None)),
-            Err(url::ParseError::RelativeUrlWithoutBase) => Self::parse_path(s),
+            Err(url::ParseError::RelativeUrlWithoutBase) => {
+                #[cfg(not(target_arch = "wasm32"))]
+                return Self::parse_path(s);
+
+                #[cfg(target_arch = "wasm32")]
+                Err(DataFusionError::NotImplemented(
+                    "Relative filesystem paths not supported on wasm32.".to_owned(),
+                ))
+            }
             Err(e) => Err(DataFusionError::External(Box::new(e))),
         }
     }
 
     /// Creates a new [`ListingTableUrl`] interpreting `s` as a filesystem path
+    #[cfg(not(target_arch = "wasm32"))]
     fn parse_path(s: &str) -> Result<Self> {
         let (prefix, glob) = match split_glob_expression(s) {
             Some((prefix, glob)) => {

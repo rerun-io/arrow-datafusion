@@ -20,9 +20,11 @@
 use crate::error::{DataFusionError, Result};
 use std::io::Error;
 
+#[cfg(feature = "compress")]
 use async_compression::tokio::bufread::{
     BzDecoder as AsyncBzDecoder, GzipDecoder as AsyncGzDecoder,
 };
+#[cfg(feature = "compress")]
 use bzip2::read::BzDecoder;
 
 use crate::datasource::file_format::avro::DEFAULT_AVRO_EXTENSION;
@@ -30,9 +32,13 @@ use crate::datasource::file_format::csv::DEFAULT_CSV_EXTENSION;
 use crate::datasource::file_format::json::DEFAULT_JSON_EXTENSION;
 use crate::datasource::file_format::parquet::DEFAULT_PARQUET_EXTENSION;
 use bytes::Bytes;
+#[cfg(feature = "compress")]
 use flate2::read::GzDecoder;
-use futures::{Stream, TryStreamExt};
+use futures::Stream;
+#[cfg(feature = "compress")]
+use futures::TryStreamExt as _;
 use std::str::FromStr;
+#[cfg(feature = "compress")]
 use tokio_util::io::{ReaderStream, StreamReader};
 
 /// Define each `FileType`/`FileCompressionType`'s extension
@@ -100,15 +106,19 @@ impl FileCompressionType {
         };
 
         match self {
+            #[cfg(feature = "compress")]
             FileCompressionType::GZIP => Box::new(
                 ReaderStream::new(AsyncGzDecoder::new(StreamReader::new(s)))
                     .map_err(err_converter),
             ),
+            #[cfg(feature = "compress")]
             FileCompressionType::BZIP2 => Box::new(
                 ReaderStream::new(AsyncBzDecoder::new(StreamReader::new(s)))
                     .map_err(err_converter),
             ),
             FileCompressionType::UNCOMPRESSED => Box::new(s),
+            #[cfg(not(feature = "compress"))]
+            _ => unimplemented!("The 'compress' feature is not enabled."),
         }
     }
 
@@ -118,9 +128,13 @@ impl FileCompressionType {
         r: T,
     ) -> Box<dyn std::io::Read + Send> {
         match self {
+            #[cfg(feature = "compress")]
             FileCompressionType::GZIP => Box::new(GzDecoder::new(r)),
+            #[cfg(feature = "compress")]
             FileCompressionType::BZIP2 => Box::new(BzDecoder::new(r)),
             FileCompressionType::UNCOMPRESSED => Box::new(r),
+            #[cfg(not(feature = "compress"))]
+            _ => unimplemented!("The 'compress' feature is not enabled."),
         }
     }
 }

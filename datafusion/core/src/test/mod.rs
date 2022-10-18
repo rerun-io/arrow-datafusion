@@ -33,10 +33,10 @@ use array::ArrayRef;
 use arrow::array::{self, Array, Decimal128Builder, Int32Array};
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
-use bzip2::write::BzEncoder;
-use bzip2::Compression as BzCompression;
-use flate2::write::GzEncoder;
-use flate2::Compression as GzCompression;
+#[cfg(feature = "compress")]
+use bzip2::{write::BzEncoder, Compression as BzCompression};
+#[cfg(feature = "compress")]
+use flate2::{write::GzEncoder, Compression as GzCompression};
 use futures::{Future, FutureExt};
 use std::fs::File;
 use std::io::prelude::*;
@@ -112,12 +112,15 @@ pub fn partitioned_file_groups(
 
         let encoder: Box<dyn Write + Send> = match file_compression_type.to_owned() {
             FileCompressionType::UNCOMPRESSED => Box::new(file),
+            #[cfg(feature = "compress")]
             FileCompressionType::GZIP => {
                 Box::new(GzEncoder::new(file, GzCompression::default()))
             }
+            #[cfg(feature = "compress")]
             FileCompressionType::BZIP2 => {
                 Box::new(BzEncoder::new(file, BzCompression::default()))
             }
+            _ => unimplemented!("GZIP/BZIP2 not supported without the compress feature.")
         };
 
         let writer = BufWriter::new(encoder);

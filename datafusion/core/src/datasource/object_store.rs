@@ -20,6 +20,7 @@
 //! and query data inside these systems.
 
 use datafusion_common::{DataFusionError, Result};
+#[cfg(not(target_arch = "wasm32"))]
 use object_store::local::LocalFileSystem;
 use object_store::ObjectStore;
 use parking_lot::RwLock;
@@ -162,7 +163,10 @@ impl ObjectStoreRegistry {
     /// created lazily, on-demand by the provided [`ObjectStoreProvider`]
     pub fn new_with_provider(provider: Option<Arc<dyn ObjectStoreProvider>>) -> Self {
         let mut map: HashMap<String, Arc<dyn ObjectStore>> = HashMap::new();
+
+        #[cfg(not(target_arch = "wasm32"))]
         map.insert("file://".to_string(), Arc::new(LocalFileSystem::new()));
+
         Self {
             object_stores: RwLock::new(map),
             provider,
@@ -260,6 +264,7 @@ mod tests {
         assert_eq!(err.to_string(), "Execution error: ObjectStoreUrl must only contain scheme and authority, got: /foo");
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn test_get_by_url_hdfs() {
         let sut = ObjectStoreRegistry::default();
@@ -268,6 +273,7 @@ mod tests {
         sut.get_by_url(&url).unwrap();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn test_get_by_url_s3() {
         let sut = ObjectStoreRegistry::default();
