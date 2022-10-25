@@ -331,11 +331,12 @@ impl ListingTable {
                 false,
             ));
         }
+        let file_metadata = file_schema.metadata().clone();
 
         let table = Self {
             table_paths: config.table_paths,
             file_schema,
-            table_schema: Arc::new(Schema::new(table_fields)),
+            table_schema: Arc::new(Schema::new(table_fields).with_metadata(file_metadata)),
             options,
             definition: None,
             collected_statistics: Default::default(),
