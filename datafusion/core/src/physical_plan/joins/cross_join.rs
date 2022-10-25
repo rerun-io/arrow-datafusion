@@ -36,7 +36,7 @@ use crate::{error::Result, scalar::ScalarValue};
 use async_trait::async_trait;
 use datafusion_physical_expr::PhysicalSortExpr;
 use log::debug;
-use std::time::Instant;
+use crate::Instant;
 
 use super::utils::{check_join_is_valid, OnceAsync, OnceFut};
 

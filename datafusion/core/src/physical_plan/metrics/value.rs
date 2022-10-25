@@ -24,12 +24,13 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
 };
 
 use parking_lot::Mutex;
 
 use chrono::{DateTime, Utc};
+
+use crate::{Duration, Instant};
 
 /// A counter to record things such as number of input or output rows
 ///

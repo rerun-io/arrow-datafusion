@@ -100,6 +100,7 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "*", features = ["js"] }
+instant = { version = "0.1", features = ["wasm-bindgen", "inaccurate"] }
 
 [dev-dependencies]
 arrow = { version = "25.0.0", features = ["prettyprint", "dyn_cmp_dict"] }
@@ -112,7 +113,7 @@ env_logger = "0.9"
 fuzz-utils = { path = "fuzz-utils" }
 rstest = "0.15.0"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+#[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 #tokio = { version = "1.0", features = ["macros", "rt", "rt-multi-thread", "sync", "fs"] }
 
 [[bench]]

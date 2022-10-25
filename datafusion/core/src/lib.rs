@@ -250,6 +250,11 @@ pub use common::from_slice;
 pub mod test;
 pub mod test_util;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use std::time::{Instant, Duration};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use instant::{Instant, Duration};
+
 #[cfg(doctest)]
 doc_comment::doctest!("../../../README.md", readme_example_test);
 

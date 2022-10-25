@@ -25,7 +25,6 @@ use std::collections::VecDeque;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use std::time::Instant;
 
 use arrow::datatypes::SchemaRef;
 use arrow::{error::Result as ArrowResult, record_batch::RecordBatch};
@@ -36,6 +35,7 @@ use object_store::ObjectStore;
 
 use datafusion_common::ScalarValue;
 
+use crate::Instant;
 use crate::datasource::listing::PartitionedFile;
 use crate::error::Result;
 use crate::execution::context::TaskContext;
