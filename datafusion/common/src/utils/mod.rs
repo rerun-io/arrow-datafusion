@@ -945,9 +945,14 @@ pub fn combine_limit(
 /// This is a wrapper around `std::thread::available_parallelism`, providing a default value
 /// of `1` if the system's parallelism cannot be determined.
 pub fn get_available_parallelism() -> usize {
-    available_parallelism()
-        .unwrap_or(NonZero::new(1).expect("literal value `1` shouldn't be zero"))
-        .get()
+    use std::sync::OnceLock;
+    static CACHED_PARALLELISM: OnceLock<usize> = OnceLock::new();
+
+    *CACHED_PARALLELISM.get_or_init(|| {
+        available_parallelism()
+            .unwrap_or(NonZero::new(1).expect("literal value `1` shouldn't be zero"))
+            .get()
+    })
 }
 
 /// Converts a collection of function arguments into an fixed-size array of length N
