@@ -71,7 +71,6 @@ use datafusion_functions_aggregate::expr_fn::{
 use async_trait::async_trait;
 use datafusion_catalog::Session;
 use datafusion_sql::TableReference;
-///use std::ops::Index;
 
 /// Contains options that control how data is
 /// written out from a DataFrame
@@ -2301,20 +2300,33 @@ impl DataFrame {
         let df = ctx.read_batch(batch)?;
         Ok(df)
     }
-}
 
-///impl Index<&str> for DataFrame {
-///    type Output = Column;
-///
-///    fn index(&self, index: &str) -> &Self::Output {
-///        let col: Column = self.plan
-///            .schema()
-///            .qualified_field_with_unqualified_name(index)
-///            .unwrap()
-///            .into();
-///        &col
-///    }
-///}
+    /// Get a column reference by unqualified name
+    ///
+    /// Returns a Column that can be used in expressions for the field with the given name.
+    /// If the field name is ambiguous (exists in multiple tables), an error is returned.
+    ///
+    /// # Example
+    /// ```
+    /// # use datafusion::prelude::*;
+    /// # use datafusion::error::Result;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let ctx = SessionContext::new();
+    /// let df = ctx.read_csv("tests/data/example.csv", CsvReadOptions::new()).await?;
+    /// let col_a = df.column("a")?;
+    /// let df = df.filter(col_a.gt(lit(0)))?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn column(&self, name: &str) -> Result<Column> {
+        let (qualifier, _field) = self
+            .plan
+            .schema()
+            .qualified_field_with_unqualified_name(name)?;
+        Ok(Column::new(qualifier.cloned(), name))
+    }
+}
 
 /// Macro for creating DataFrame.
 /// # Example
