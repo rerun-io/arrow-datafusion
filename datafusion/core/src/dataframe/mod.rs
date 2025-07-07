@@ -428,17 +428,14 @@ impl DataFrame {
     /// ```
     ///
     pub fn drop_columns(self, columns: &[&str]) -> Result<DataFrame> {
+        let schema = Arc::clone(self.plan.schema());
         let fields_to_drop = columns
             .iter()
-            .map(|name| {
-                self.plan
-                    .schema()
-                    .qualified_field_with_unqualified_name(name)
-            })
+            .map(|name| schema.qualified_field_with_unqualified_name(name))
             .filter(|r| r.is_ok())
             .map(|r| {
                 let (qualifier, field) = r.unwrap();
-                (qualifier.cloned(), field.clone())
+                (qualifier, field)
             })
             .collect::<Vec<_>>();
         self.drop_qualified_columns(&fields_to_drop)
@@ -453,12 +450,8 @@ impl DataFrame {
     /// * `fields_to_drop` - A slice of tuples containing the qualifier and field to drop
     pub fn drop_qualified_columns(
         self,
-        fields_to_drop: &[(Option<TableReference>, Field)],
+        fields_to_drop: &[(Option<&TableReference>, &Field)],
     ) -> Result<DataFrame> {
-        let field_references_to_drop = fields_to_drop
-            .iter()
-            .map(|(qualifier, field)| (qualifier.as_ref(), field))
-            .collect::<Vec<_>>();
         let expr: Vec<Expr> = self
             .plan
             .schema()
@@ -466,7 +459,7 @@ impl DataFrame {
             .into_iter()
             .enumerate()
             .map(|(idx, _)| self.plan.schema().qualified_field(idx))
-            .filter(|(qualifier, f)| !field_references_to_drop.contains(&(*qualifier, f)))
+            .filter(|(qualifier, f)| !fields_to_drop.contains(&(*qualifier, f)))
             .map(|(qualifier, field)| Expr::Column(Column::from((qualifier, field))))
             .collect();
         self.select(expr)
