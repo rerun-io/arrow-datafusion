@@ -71,6 +71,7 @@ use datafusion_functions_aggregate::expr_fn::{
 use async_trait::async_trait;
 use datafusion_catalog::Session;
 use datafusion_sql::TableReference;
+///use std::ops::Index;
 
 /// Contains options that control how data is
 /// written out from a DataFrame
@@ -463,6 +464,28 @@ impl DataFrame {
             .map(|(qualifier, field)| Expr::Column(Column::from((qualifier, field))))
             .collect();
         self.select(expr)
+    }
+
+    /// Drop columns from the DataFrame based on a list of columns
+    /// Mirrors select structure.
+    pub fn drop(
+        self,
+        expr_list: impl IntoIterator<Item = impl Into<Column>>,
+    ) -> Result<DataFrame> {
+        let schema = Arc::clone(self.plan.schema());
+        let columns: Vec<Column> = expr_list.into_iter().map(|e| e.into()).collect();
+        let fields_to_drop: Vec<(Option<&TableReference>, &Field)> = columns
+            .iter()
+            .map(|col| {
+                (
+                    col.relation.as_ref(),
+                    schema
+                        .field_with_name(col.relation.as_ref(), &col.name)
+                        .unwrap(),
+                )
+            })
+            .collect::<Vec<_>>();
+        self.drop_qualified_columns(&fields_to_drop)
     }
 
     /// Expand multiple list/struct columns into a set of rows and new columns.
@@ -2279,6 +2302,19 @@ impl DataFrame {
         Ok(df)
     }
 }
+
+///impl Index<&str> for DataFrame {
+///    type Output = Column;
+///
+///    fn index(&self, index: &str) -> &Self::Output {
+///        let col: Column = self.plan
+///            .schema()
+///            .qualified_field_with_unqualified_name(index)
+///            .unwrap()
+///            .into();
+///        &col
+///    }
+///}
 
 /// Macro for creating DataFrame.
 /// # Example
